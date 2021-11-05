@@ -1,0 +1,132 @@
+---
+title: "DiseaseDiva"
+author: "Us"
+date: "10/24/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Background 
+A team of 73 researchers from all over the United States investigated clinical genomics of advanced prostate cancer. The aim of this research was to facilitate precision medicine create a prospective 
+
+
+
+Cleaning Our Data
+
+```{r}
+#Load data downloaded from 
+#rawdat <- read.csv("/cloud/project/data/diseasedivadata.csv")
+rawdat<- read.csv("~/Documents/Dartmouth/Fall 2021/QBS 181/group project/Data .csv")
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+#Summarize
+summary(rawdat)
+```
+`
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+#Remove NAs
+complete_dat <- na.omit(rawdat)
+
+```
+
+
+```{r}
+#Check for duplicates
+duplicated(complete_dat$Sample.ID)
+
+```
+
+
+```{r}
+#Check if sample id is dup
+complete_dat[!complete_dat$Patient.ID %in% complete_dat$Sample.ID, ]
+
+
+```
+```{r}
+cols_nonunique <- c()
+
+for(i in 1:ncol(complete_dat)){
+  if(length(unique(complete_dat[,i])) <= 1){
+    cols_nonunique[length(cols_nonunique) + 1] <- i
+  }
+}
+
+print(cols_nonunique)
+
+```
+
+```{r}
+
+remove_nonuniques <- complete_dat[,-cols_nonunique]
+
+```
+
+Aim(3.1)-Assign classifications of “high”, “medium” or “low” based on the intensity of mutation count
+```{r}
+finaldata<-remove_nonuniques
+range(finaldata$tumor.content) ##checking the range of the content
+#fixing thresholds to fixate the Severity levels
+finaldata%>%add_column(Severity="Low")->finaldata
+finaldata%>%mutate(Severity=ifelse(`tumor.content`>30 & `tumor.content`<=70 ,"Moderate",Severity))->finaldata
+finaldata%>%mutate(Severity=ifelse(`tumor.content`>70 & `tumor.content`<=100 ,"High",Severity))->finaldata
+unique(finaldata$Severity)
+```
+
+
+{Aim3.3-Are these then related to biopsy sites?  (we need to add more to this)
+```{r}
+finaldata%>%group_by(Severity,`Tumor.Site`)%>%summarise(count=n())#number of subjects in each level}
+```
+
+```{r}
+#subset the data 
+library(tidyverse)
+age_tumor <- remove_nonuniques[c(4,11)]
+age_tumor
+summary(age_tumor$Diagnosis.Age)
+
+age_tumor$agegrp <- ifelse(age_tumor$Diagnosis.Age >= 40 & age_tumor$Diagnosis.Age <=59, "40-59",
+                  ifelse(age_tumor$Diagnosis.Age > 59 & age_tumor$Diagnosis.Age <= 69, "60-69",
+                         ifelse(age_tumor$Diagnosis.Age > 69 & age_tumor$Diagnosis.Age <= 79, "70-79",
+                                ifelse(age_tumor$Diagnosis.Age >79,"80+", NA))))
+
+library(dplyr)
+install.packages("gtsummary")
+library(gtsummary)
+age_tumor %>% 
+  select(Tumor.Site, agegrp) %>%
+  tbl_summary(by = agegrp, label = Tumor.Site ~ "Tumor Site") %>% add_p(test=everything()~"kruskal.test")
+```
+
+```{r}
+freq <- age_tumor %>% group_by(agegrp,Tumor.Site) %>% summarise(Freq=n())
+freq <- rename(freq, "Count of Tumors"=Freq)
+freq_gt1 <-freq[which(freq$`Count of Tumors`>1),]
+library(ggplot2)
+library(viridis)
+ggplot(freq_gt1, aes(agegrp,`Count of Tumors`)) +
+  labs(x="Age Grouped by BJC paper levels", y="Frequency of Tumors") +
+  geom_bar(aes(fill=`Tumor.Site`),stat="identity",position="dodge") +
+  scale_fill_viridis_d(option  = "mako") 
+  
+```
+
+
+
+
+
+
+
+
+
+
