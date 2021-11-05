@@ -71,22 +71,6 @@ remove_nonuniques <- complete_dat[,-cols_nonunique]
 
 ```
 
-Aim(3.1)-Assign classifications of “high”, “medium” or “low” based on the intensity of mutation count
-```{r}
-finaldata<-remove_nonuniques
-range(finaldata$tumor.content) ##checking the range of the content
-#fixing thresholds to fixate the Severity levels
-finaldata%>%add_column(Severity="Low")->finaldata
-finaldata%>%mutate(Severity=ifelse(`tumor.content`>30 & `tumor.content`<=70 ,"Moderate",Severity))->finaldata
-finaldata%>%mutate(Severity=ifelse(`tumor.content`>70 & `tumor.content`<=100 ,"High",Severity))->finaldata
-unique(finaldata$Severity)
-```
-
-
-{Aim3.3-Are these then related to biopsy sites?  (we need to add more to this)
-```{r}
-finaldata%>%group_by(Severity,`Tumor.Site`)%>%summarise(count=n())#number of subjects in each level}
-```
 
 ```{r}
 #subset the data 
