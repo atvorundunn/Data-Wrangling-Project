@@ -107,7 +107,54 @@ ggplot(freq_gt1, aes(agegrp,`Count of Tumors`)) +
 
 
 
+```{r}
 
+correlation_data = remove_nonuniques[c(3,6,7)]
+
+#Classify data as "Low" "Medium" or "High" based on mutation count
+classifications = correlation_data$Mutation.Count
+low_bound = quantile(classifications, .33)
+high_bound = quantile(classifications, .67)
+
+medium = which(classifications < high_bound)
+low = which(classifications < low_bound)
+high = which(classifications > high_bound)
+
+classifications[medium] = "Medium"
+classifications[low] = "Low"
+classifications[high] = "High"
+
+
+#Convert exposure status to numeric binary variable.
+binary_exposure = remove_nonuniques$Abiraterone..ABI..and.Enzalutamide..ENZA..Exposure.Status
+
+binary_exposure[binary_exposure == "Yes"] = 1
+binary_exposure[binary_exposure == "No"] = 0
+
+correlation_data$Binary.Exposure <- binary_exposure
+
+
+#Some basic data visualization and analysis on the relationship between exposure status, mutation count and fraction genome altered
+exposed = which(binary_exposure == 1)
+non_exposed = which(binary_exposure == 0)
+
+hist(correlation_data$Mutation.Count[exposed])
+hist(correlation_data$Mutation.Count[non_exposed])
+
+summary(correlation_data$Mutation.Count[exposed])
+summary(correlation_data$Mutation.Count[non_exposed])
+
+hist(correlation_data$Fraction.Genome.Altered[exposed])
+hist(correlation_data$Fraction.Genome.Altered[non_exposed])
+
+summary(correlation_data$Fraction.Genome.Altered[exposed])
+summary(correlation_data$Fraction.Genome.Altered[non_exposed])
+
+t.test(correlation_data$Mutation.Count[exposed], correlation_data$Mutation.Count[non_exposed])
+t.test(correlation_data$Fraction.Genome.Altered[exposed], correlation_data$Fraction.Genome.Altered[non_exposed])
+
+#TODO: Come up with some better plots.
+```
 
 
 
